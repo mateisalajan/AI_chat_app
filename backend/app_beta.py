@@ -1,36 +1,19 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
+from fastapi import FastAPI, HTTPException
 from .redis_client import MiniRedisClient
 from .models import Message
-from .llm_client import call_ollama_model
 import base64
 
 app = FastAPI()
 redis_client = MiniRedisClient()
 
-@app.post("/chat/{chat_id}/send_and_respond")
-async def send_and_respond(
-    chat_id: str,
-    message: Message,
-    background_tasks: BackgroundTasks,
-    model: str = Query("llama3.2:1b", description="LLM model to use")
-):
-    # Store user message
+@app.post("/chat/{chat_id}/send")
+async def send_message(chat_id: str, message: Message):
     encoded_content = base64.b64encode(message.content.encode()).decode()
     cmd = f"LPUSH chat:{chat_id}:messages {message.sender}|{encoded_content}"
     resp = redis_client.send_command(cmd)
     if resp.startswith("Unknown"):
         raise HTTPException(status_code=400, detail=resp)
-
-    # Trigger background task for LLM response with model choice
-    background_tasks.add_task(handle_llm_response, chat_id, message.content, model)
-
-    return {"status": "message stored, LLM response pending"}
-
-async def handle_llm_response(chat_id: str, prompt: str, model_name: str):
-    response = await call_ollama_model(prompt, model_name=model_name)
-    encoded_response = base64.b64encode(response.encode()).decode()
-    llm_cmd = f"LPUSH chat:{chat_id}:messages llm|{encoded_response}"
-    redis_client.send_command(llm_cmd)
+    return {"status": "message stored"}
 
 @app.get("/chat/{chat_id}/messages")
 async def get_messages(chat_id: str, count: int = 10):
@@ -38,6 +21,7 @@ async def get_messages(chat_id: str, count: int = 10):
     resp = redis_client.send_command(cmd)
     messages = resp.split('\n') if resp else []
     parsed = []
+    print("[backend] Raw messages from Redis:", messages)  # raw list for debugging
     for m in messages:
         if '|' in m:
             sender, encoded_content = m.split('|', 1)
@@ -46,4 +30,5 @@ async def get_messages(chat_id: str, count: int = 10):
             except Exception:
                 content = encoded_content
             parsed.append({"sender": sender, "content": content})
+            print(f"[backend] Decoded message: sender={sender}, content={content}")  # decoded print
     return {"messages": parsed}

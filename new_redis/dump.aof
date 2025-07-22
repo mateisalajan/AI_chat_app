@@ -2,3 +2,7 @@ LPUSH chat:1:messages user1|Hello from user1!
 LPUSH chat:2:messages user2|SSBhbSB1c2VyMiE=
 LPUSH chat:3:messages user3|R29vZCBtb3JuaW5nIHVzZXIzIQ==
 LPUSH chat:1:messages user3|V2hhdCBhcmUgeW91IHVwIHRvIHVzZXIxPyE=
+LPUSH chat:1:messages user1|SGVsbG8gQUkh
+LPUSH chat:1:messages llm|W2xsYW1hMl06IEkgcmVjZWl2ZWQgeW91ciBtZXNzYWdlOiBIZWxsbyBBSSE=
+LPUSH chat:2:messages user2|R29vZCBuaWdodCBvbGxhbWE=
+LPUSH chat:2:messages llm|R29vZG5pZ2h0IHRvIHlvdSB0b28sIG9sbGFtYS4gU3dlZXQgZHJlYW1zIQ==
